@@ -1,0 +1,188 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Using SQLite for local dev: avoid connector-specific types like Json and enums.
+model Tenant {
+  id                String   @id @default(uuid())
+  name              String
+  domain            String   @unique
+  subscription_tier String?
+  settings          String?  // JSON stored as string for SQLite dev
+  created_at        DateTime @default(now())
+
+  users             User[]
+  leads             Lead[]
+  customers         Customer[]
+  deals             Deal[]
+  communications    Communication[]
+  travelPackages    TravelPackage[]
+  bookings          Booking[]
+
+  @@index([domain])
+}
+
+model User {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  password_hash String
+  first_name    String?
+  last_name     String?
+  role          String   @default("AGENT")
+  tenant        Tenant   @relation(fields: [tenant_id], references: [id])
+  tenant_id     String
+  is_active     Boolean  @default(true)
+  last_login    DateTime?
+  failed_logins Int      @default(0)
+  locked_until  DateTime?
+
+  assigned_leads Lead[]  @relation("AssignedLeads")
+  assigned_deals Deal[]  @relation("AssignedDeals")
+  passwordResets PasswordReset[]
+  refreshTokens  RefreshToken[]
+
+  @@index([tenant_id])
+  @@index([email])
+}
+
+model Lead {
+  id          String   @id @default(uuid())
+  email       String?
+  phone       String?
+  first_name  String?
+  last_name   String?
+  source      String?
+  status      String?  @default("new")
+  score       Int      @default(0)
+  assigned_to User?    @relation("AssignedLeads", fields: [assigned_to_id], references: [id])
+  assigned_to_id String?
+  tenant      Tenant   @relation(fields: [tenant_id], references: [id])
+  tenant_id   String
+  travel_dates String?
+  destination String?
+  budget      Float?
+  adults      Int?     @default(1)
+  children    Int?     @default(0)
+  notes       String?
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+  // optional customers (one lead can become multiple customer records over time)
+  customers   Customer[] @relation("LeadCustomer")
+
+  @@index([tenant_id])
+  @@index([email])
+  @@index([phone])
+}
+
+model Customer {
+  id               String   @id @default(uuid())
+  lead             Lead?    @relation("LeadCustomer", fields: [lead_id], references: [id])
+  lead_id          String?
+  customer_type    String?
+  loyalty_level    String?
+  total_spent      Float    @default(0)
+  last_booking_date DateTime?
+  tenant           Tenant   @relation(fields: [tenant_id], references: [id])
+  tenant_id        String
+
+  deals            Deal[]
+  communications   Communication[]
+  bookings         Booking[]
+
+  @@index([tenant_id])
+}
+
+model Deal {
+  id                 String   @id @default(uuid())
+  customer           Customer @relation(fields: [customer_id], references: [id])
+  customer_id        String
+  title              String
+  value              Float
+  stage              String
+  probability        Float?
+  expected_close_date DateTime?
+  assigned_to        User?    @relation("AssignedDeals", fields: [assigned_to_id], references: [id])
+  assigned_to_id     String?
+  tenant             Tenant   @relation(fields: [tenant_id], references: [id])
+  tenant_id          String
+
+  @@index([tenant_id])
+  @@index([customer_id])
+}
+
+model Communication {
+  id          String   @id @default(uuid())
+  customer    Customer @relation(fields: [customer_id], references: [id])
+  customer_id String
+  type        String
+  subject     String?
+  content     String?
+  sent_at     DateTime?
+  status      String?
+  tenant      Tenant   @relation(fields: [tenant_id], references: [id])
+  tenant_id   String
+
+  @@index([tenant_id])
+  @@index([customer_id])
+}
+
+model TravelPackage {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  base_price  Float
+  duration    Int?
+  destination String?
+  tenant      Tenant   @relation(fields: [tenant_id], references: [id])
+  tenant_id   String
+
+  bookings    Booking[]
+
+  @@index([tenant_id])
+  @@index([destination])
+}
+
+model Booking {
+  id          String   @id @default(uuid())
+  customer    Customer @relation(fields: [customer_id], references: [id])
+  customer_id String
+  package     TravelPackage @relation(fields: [package_id], references: [id])
+  package_id  String
+  status      String
+  total_amount Float
+  travel_date DateTime
+  pax_count   Int
+  tenant      Tenant   @relation(fields: [tenant_id], references: [id])
+  tenant_id   String
+
+  @@index([tenant_id])
+  @@index([customer_id])
+  @@index([package_id])
+}
+
+model PasswordReset {
+  id         String   @id @default(uuid())
+  user       User     @relation(fields: [user_id], references: [id])
+  user_id    String
+  token      String   @unique
+  expires_at DateTime
+  created_at DateTime @default(now())
+  @@index([user_id])
+}
+
+model RefreshToken {
+  id          String   @id @default(uuid())
+  user        User     @relation(fields: [user_id], references: [id])
+  user_id     String
+  token       String   @unique
+  revoked     Boolean  @default(false)
+  created_at  DateTime @default(now())
+  expires_at  DateTime
+  replaced_by String?
+  @@index([user_id])
+}

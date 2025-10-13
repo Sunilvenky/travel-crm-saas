@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id               String   @id @default(cuid())
+  name             String
+  domain           String   @unique
+  subscriptionTier String
+  settings         Json?
+  createdAt        DateTime @default(now())
+  users            User[]
+  leads            Lead[]
+  customers        Customer[]
+  deals            Deal[]
+  communications   Communication[]
+  packages         TravelPackage[]
+  bookings         Booking[]
+
+  @@map("tenants")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  firstName    String?
+  lastName     String?
+  role         Role     @default(AGENT)
+  tenant       Tenant   @relation(fields: [tenantId], references: [id])
+  tenantId     String
+  isActive     Boolean  @default(true)
+  lastLogin    DateTime?
+
+  @@index([tenantId])
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  AGENT
+  VIEWER
+}
+
+model Lead {
+  id          String   @id @default(cuid())
+  email       String?
+  phone       String?
+  firstName   String?
+  lastName    String?
+  source      String?
+  status      String   @default("new")
+  score       Int      @default(0)
+  assignedTo  User?    @relation(fields: [assignedToId], references: [id])
+  assignedToId String?
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  tenantId    String
+  travelDates String?
+  destination String?
+  budget      Float?
+  adults      Int?     @default(1)
+  children    Int?     @default(0)
+  notes       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([tenantId])
+  @@map("leads")
+}
+
+model Customer {
+  id              String   @id @default(cuid())
+  lead            Lead?    @relation(fields: [leadId], references: [id])
+  leadId          String?
+  customerType    String?
+  loyaltyLevel    String?
+  totalSpent      Float    @default(0)
+  lastBookingDate DateTime?
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+  tenantId        String
+  deals           Deal[]
+  communications  Communication[]
+  bookings        Booking[]
+
+  @@index([tenantId])
+  @@map("customers")
+}
+
+model Deal {
+  id               String   @id @default(cuid())
+  customer         Customer @relation(fields: [customerId], references: [id])
+  customerId       String
+  title            String
+  value            Float
+  stage            String
+  probability      Int?
+  expectedCloseDate DateTime?
+  assignedTo       User?    @relation(fields: [assignedToId], references: [id])
+  assignedToId     String?
+  tenant           Tenant   @relation(fields: [tenantId], references: [id])
+  tenantId         String
+
+  @@index([tenantId])
+  @@map("deals")
+}
+
+model Communication {
+  id         String   @id @default(cuid())
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  customerId String?
+  type       String
+  subject    String?
+  content    String?
+  sentAt     DateTime @default(now())
+  status     String
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  tenantId   String
+
+  @@index([tenantId])
+  @@map("communications")
+}
+
+model TravelPackage {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  basePrice   Float
+  duration    Int
+  destination String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  tenantId    String
+  bookings    Booking[]
+
+  @@index([tenantId])
+  @@map("travel_packages")
+}
+
+model Booking {
+  id         String   @id @default(cuid())
+  customer   Customer @relation(fields: [customerId], references: [id])
+  customerId String
+  package    TravelPackage @relation(fields: [packageId], references: [id])
+  packageId  String
+  status     String
+  totalAmount Float
+  travelDate DateTime
+  paxCount   Int
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  tenantId   String
+
+  @@index([tenantId])
+  @@map("bookings")
+}
+
+*** End Patch
