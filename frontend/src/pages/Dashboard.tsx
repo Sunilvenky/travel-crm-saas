@@ -20,6 +20,7 @@ export default function Dashboard() {
     { path: '/deals', label: 'Deals', icon: '💼' },
     { path: '/packages', label: 'Packages', icon: '🎒' },
     { path: '/bookings', label: 'Bookings', icon: '📅' },
+    { path: '/integrations', label: 'Integrations', icon: '🔌' },
   ];
 
   return (

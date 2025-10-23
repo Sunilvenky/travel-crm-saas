@@ -134,3 +134,82 @@ class Booking(models.Model):
     travel_date = models.DateTimeField()
     pax_count = models.IntegerField()
     tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE)
+
+
+class Integration(models.Model):
+    """Store integration configurations for each tenant"""
+    INTEGRATION_TYPES = [
+        ('whatsapp', 'WhatsApp Agent'),
+        ('meta_ads', 'Meta Ads Agent'),
+        ('salesforce', 'Salesforce'),
+        ('stripe', 'Stripe'),
+        ('sendgrid', 'SendGrid'),
+    ]
+    
+    id = models.BigAutoField(primary_key=True)
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE, related_name='integrations')
+    integration_type = models.CharField(max_length=50, choices=INTEGRATION_TYPES)
+    is_active = models.BooleanField(default=False)
+    credentials = models.JSONField()  # Encrypted credentials
+    settings = models.JSONField(null=True, blank=True)  # Additional settings
+    last_synced_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        unique_together = ('tenant', 'integration_type')
+    
+    def __str__(self):
+        return f"{self.tenant.name} - {self.get_integration_type_display()}"
+
+
+class MetaAdsCampaign(models.Model):
+    """Track Meta Ads campaigns created from CRM"""
+    STATUS_CHOICES = [
+        ('active', 'Active'),
+        ('paused', 'Paused'),
+        ('completed', 'Completed'),
+        ('draft', 'Draft'),
+    ]
+    
+    id = models.BigAutoField(primary_key=True)
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE)
+    package = models.ForeignKey(TravelPackage, null=True, blank=True, on_delete=models.SET_NULL)
+    campaign_id = models.CharField(max_length=255)  # ID from Meta Ads Agent
+    campaign_name = models.CharField(max_length=255)
+    status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='draft')
+    budget = models.DecimalField(max_digits=12, decimal_places=2)
+    spend = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    impressions = models.BigIntegerField(default=0)
+    clicks = models.BigIntegerField(default=0)
+    conversions = models.IntegerField(default=0)
+    revenue = models.DecimalField(max_digits=12, decimal_places=2, default=0)
+    roi = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.campaign_name} ({self.status})"
+
+
+class WhatsAppConversation(models.Model):
+    """Track WhatsApp conversations"""
+    id = models.BigAutoField(primary_key=True)
+    tenant = models.ForeignKey(Tenant, on_delete=models.CASCADE)
+    lead = models.ForeignKey(Lead, null=True, blank=True, on_delete=models.SET_NULL)
+    customer = models.ForeignKey(Customer, null=True, blank=True, on_delete=models.SET_NULL)
+    conversation_id = models.CharField(max_length=255)  # ID from WhatsApp Agent
+    phone_number = models.CharField(max_length=50)
+    last_message_at = models.DateTimeField()
+    message_count = models.IntegerField(default=0)
+    sentiment_score = models.DecimalField(max_digits=3, decimal_places=2, null=True, blank=True)  # -1.0 to 1.0
+    sentiment_label = models.CharField(max_length=20, null=True, blank=True)  # positive, neutral, negative
+    intent = models.CharField(max_length=100, null=True, blank=True)  # booking, inquiry, complaint, etc.
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Conversation with {self.phone_number}"

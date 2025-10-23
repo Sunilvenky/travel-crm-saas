@@ -8,6 +8,7 @@ import Customers from './pages/Customers';
 import Deals from './pages/Deals';
 import Packages from './pages/Packages';
 import Bookings from './pages/Bookings';
+import Integrations from './pages/Integrations';
 import { ToastProvider } from './components/ui/toast';
 
 function App() {
@@ -32,6 +33,7 @@ function App() {
               <Route path="deals" element={<Deals />} />
               <Route path="packages" element={<Packages />} />
               <Route path="bookings" element={<Bookings />} />
+              <Route path="integrations" element={<Integrations />} />
             </Route>
           </Routes>
         </div>

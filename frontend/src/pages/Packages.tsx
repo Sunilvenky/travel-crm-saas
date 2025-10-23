@@ -17,6 +17,12 @@ export default function Packages() {
   const [showForm, setShowForm] = useState(false);
   const [editingPackage, setEditingPackage] = useState<Package | null>(null);
   const [formData, setFormData] = useState<Partial<Package>>({});
+  const [showPromoteModal, setShowPromoteModal] = useState(false);
+  const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
+  const [selectedPackage, setSelectedPackage] = useState<Package | null>(null);
+  const [promoteBudget, setPromoteBudget] = useState('500');
+  const [promoteDuration, setPromoteDuration] = useState('7');
+  const [whatsappPhone, setWhatsappPhone] = useState('');
 
   useEffect(() => {
     fetchPackages();
@@ -79,6 +85,60 @@ export default function Packages() {
     setFormData({});
   };
 
+  const handlePromote = (pkg: Package) => {
+    setSelectedPackage(pkg);
+    setShowPromoteModal(true);
+  };
+
+  const handleSendWhatsApp = (pkg: Package) => {
+    setSelectedPackage(pkg);
+    setShowWhatsAppModal(true);
+  };
+
+  const submitMetaAdsPromotion = async () => {
+    if (!selectedPackage) return;
+    
+    try {
+      const response = await api.post('/integrations/meta-ads/promote-package/', {
+        package_id: selectedPackage.id,
+        budget: parseFloat(promoteBudget),
+        duration_days: parseInt(promoteDuration)
+      });
+      
+      if (response.data.success) {
+        alert('Campaign created successfully!');
+        setShowPromoteModal(false);
+        setSelectedPackage(null);
+        setPromoteBudget('500');
+        setPromoteDuration('7');
+      }
+    } catch (error) {
+      console.error('Error creating campaign:', error);
+      alert('Failed to create campaign. Please check if Meta Ads is connected in Integrations.');
+    }
+  };
+
+  const submitWhatsAppSend = async () => {
+    if (!selectedPackage || !whatsappPhone) return;
+    
+    try {
+      const response = await api.post('/integrations/whatsapp/send-package/', {
+        phone_number: whatsappPhone,
+        package_id: selectedPackage.id
+      });
+      
+      if (response.data.success) {
+        alert('Package details sent via WhatsApp!');
+        setShowWhatsAppModal(false);
+        setSelectedPackage(null);
+        setWhatsappPhone('');
+      }
+    } catch (error) {
+      console.error('Error sending WhatsApp:', error);
+      alert('Failed to send WhatsApp message. Please check if WhatsApp Agent is connected in Integrations.');
+    }
+  };
+
   if (loading) {
     return <div className="p-6">Loading...</div>;
   }
@@ -105,6 +165,124 @@ export default function Packages() {
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
       </div>
+
+      {/* Meta Ads Promotion Modal */}
+      {showPromoteModal && selectedPackage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4 text-purple-700">
+              📢 Promote "{selectedPackage.name}" on Meta Ads
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Campaign Budget ($)
+                </label>
+                <input
+                  type="number"
+                  value={promoteBudget}
+                  onChange={(e) => setPromoteBudget(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  placeholder="500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Duration (days)
+                </label>
+                <input
+                  type="number"
+                  value={promoteDuration}
+                  onChange={(e) => setPromoteDuration(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  placeholder="7"
+                />
+              </div>
+              <div className="bg-purple-50 p-3 rounded">
+                <p className="text-sm text-purple-700">
+                  <strong>Preview:</strong><br />
+                  Campaign: "{selectedPackage.name}"<br />
+                  Destination: {selectedPackage.destination}<br />
+                  Price: ${parseFloat(selectedPackage.base_price).toLocaleString()}<br />
+                  Budget: ${promoteBudget} for {promoteDuration} days
+                </p>
+              </div>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setShowPromoteModal(false);
+                    setSelectedPackage(null);
+                  }}
+                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitMetaAdsPromotion}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+                >
+                  Launch Campaign
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* WhatsApp Send Modal */}
+      {showWhatsAppModal && selectedPackage && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded-lg w-full max-w-md">
+            <h2 className="text-xl font-bold mb-4 text-green-700">
+              💬 Send "{selectedPackage.name}" via WhatsApp
+            </h2>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone Number (with country code)
+                </label>
+                <input
+                  type="tel"
+                  value={whatsappPhone}
+                  onChange={(e) => setWhatsappPhone(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  placeholder="+1234567890"
+                />
+              </div>
+              <div className="bg-green-50 p-3 rounded">
+                <p className="text-sm text-green-700">
+                  <strong>Message Preview:</strong><br />
+                  Hi! Check out this amazing travel package:<br /><br />
+                  🏝️ <strong>{selectedPackage.name}</strong><br />
+                  📍 {selectedPackage.destination}<br />
+                  💰 ${parseFloat(selectedPackage.base_price).toLocaleString()}<br />
+                  ⏱️ {selectedPackage.duration} days<br /><br />
+                  {selectedPackage.description}
+                </p>
+              </div>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setShowWhatsAppModal(false);
+                    setSelectedPackage(null);
+                    setWhatsappPhone('');
+                  }}
+                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-md hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={submitWhatsAppSend}
+                  disabled={!whatsappPhone}
+                  className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Send WhatsApp
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Form Modal */}
       {showForm && (
@@ -214,18 +392,34 @@ export default function Packages() {
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                   {pkg.duration ? `${pkg.duration} days` : '-'}
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
                   <button
                     onClick={() => handleEdit(pkg)}
-                    className="text-blue-600 hover:text-blue-900 mr-3"
+                    className="text-blue-600 hover:text-blue-900"
+                    title="Edit"
                   >
-                    Edit
+                    ✏️
+                  </button>
+                  <button
+                    onClick={() => handlePromote(pkg)}
+                    className="text-purple-600 hover:text-purple-900"
+                    title="Promote on Meta Ads"
+                  >
+                    📢
+                  </button>
+                  <button
+                    onClick={() => handleSendWhatsApp(pkg)}
+                    className="text-green-600 hover:text-green-900"
+                    title="Send via WhatsApp"
+                  >
+                    💬
                   </button>
                   <button
                     onClick={() => handleDelete(pkg.id)}
                     className="text-red-600 hover:text-red-900"
+                    title="Delete"
                   >
-                    Delete
+                    🗑️
                   </button>
                 </td>
               </tr>
