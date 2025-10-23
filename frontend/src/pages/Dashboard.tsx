@@ -18,9 +18,10 @@ export default function Dashboard() {
     { path: '/leads', label: 'Leads', icon: '👥' },
     { path: '/customers', label: 'Customers', icon: '🤝' },
     { path: '/deals', label: 'Deals', icon: '💼' },
-    { path: '/packages', label: 'Packages', icon: '�' },
+    { path: '/packages', label: 'Packages', icon: '🎁' },
     { path: '/bookings', label: 'Bookings', icon: '📅' },
     { path: '/ads-dashboard', label: 'Ads Dashboard', icon: '📢' },
+    { path: '/ai-insights', label: 'AI Insights', icon: '🧠' },
     { path: '/integrations', label: 'Integrations', icon: '🔌' },
   ];
 

@@ -10,6 +10,7 @@ import Packages from './pages/Packages';
 import Bookings from './pages/Bookings';
 import Integrations from './pages/Integrations';
 import AdsDashboard from './pages/AdsDashboard';
+import AIInsights from './pages/AIInsights';
 import { ToastProvider } from './components/ui/toast';
 
 function App() {
@@ -36,6 +37,7 @@ function App() {
               <Route path="bookings" element={<Bookings />} />
               <Route path="integrations" element={<Integrations />} />
               <Route path="ads-dashboard" element={<AdsDashboard />} />
+              <Route path="ai-insights" element={<AIInsights />} />
             </Route>
           </Routes>
         </div>
