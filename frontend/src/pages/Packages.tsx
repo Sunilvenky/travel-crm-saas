@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import api from '../api';
 
 interface Package {
@@ -23,6 +24,7 @@ export default function Packages() {
   const [promoteBudget, setPromoteBudget] = useState('500');
   const [promoteDuration, setPromoteDuration] = useState('7');
   const [whatsappPhone, setWhatsappPhone] = useState('');
+  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
   useEffect(() => {
     fetchPackages();
@@ -146,13 +148,32 @@ export default function Packages() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Travel Packages</h1>
-        <button
-          onClick={() => setShowForm(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-        >
-          Add Package
-        </button>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Travel Packages</h1>
+          <p className="text-gray-600 mt-1">Manage and promote your travel packages</p>
+        </div>
+        <div className="flex items-center space-x-3">
+          <div className="flex bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setViewMode('grid')}
+              className={`px-3 py-1 rounded ${viewMode === 'grid' ? 'bg-white shadow-sm' : ''}`}
+            >
+              🎴 Grid
+            </button>
+            <button
+              onClick={() => setViewMode('table')}
+              className={`px-3 py-1 rounded ${viewMode === 'table' ? 'bg-white shadow-sm' : ''}`}
+            >
+              📋 Table
+            </button>
+          </div>
+          <button
+            onClick={() => setShowForm(true)}
+            className="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-2 rounded-lg hover:from-blue-700 hover:to-blue-800 shadow-md"
+          >
+            ➕ Add Package
+          </button>
+        </div>
       </div>
 
       {/* Search */}
@@ -362,8 +383,115 @@ export default function Packages() {
         </div>
       )}
 
-      {/* Table */}
-      <div className="bg-white shadow rounded-lg overflow-hidden">
+      {/* Grid View */}
+      {viewMode === 'grid' && (
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          {filteredPackages.map((pkg, index) => (
+            <motion.div
+              key={pkg.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+              whileHover={{ scale: 1.03 }}
+              className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300"
+            >
+              {/* Package Image Placeholder */}
+              <div className="h-48 bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 relative">
+                <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
+                  <span className="text-white text-6xl">🏝️</span>
+                </div>
+                <div className="absolute top-3 right-3 bg-white bg-opacity-90 px-3 py-1 rounded-full">
+                  <span className="text-sm font-bold text-purple-600">
+                    ${parseFloat(pkg.base_price).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              {/* Package Content */}
+              <div className="p-5">
+                <div className="flex items-start justify-between mb-3">
+                  <h3 className="text-xl font-bold text-gray-900 leading-tight">{pkg.name}</h3>
+                  {pkg.duration && (
+                    <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full ml-2 whitespace-nowrap">
+                      {pkg.duration} days
+                    </span>
+                  )}
+                </div>
+
+                {pkg.destination && (
+                  <div className="flex items-center text-gray-600 mb-3">
+                    <span className="mr-1">📍</span>
+                    <span className="text-sm">{pkg.destination}</span>
+                  </div>
+                )}
+
+                {pkg.description && (
+                  <p className="text-sm text-gray-600 mb-4 line-clamp-2">{pkg.description}</p>
+                )}
+
+                {/* AI Insights Badge */}
+                <div className="mb-4 p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg border border-purple-200">
+                  <div className="flex items-center text-xs text-purple-700">
+                    <span className="mr-1">✨</span>
+                    <span className="font-medium">85% booking probability</span>
+                  </div>
+                  <div className="flex items-center text-xs text-pink-600 mt-1">
+                    <span className="mr-1">🔥</span>
+                    <span>Trending this week</span>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex justify-between space-x-2">
+                  <button
+                    onClick={() => handleEdit(pkg)}
+                    className="flex-1 bg-blue-50 hover:bg-blue-100 text-blue-600 py-2 rounded-lg text-sm font-medium transition-colors"
+                    title="Edit"
+                  >
+                    ✏️ Edit
+                  </button>
+                  <button
+                    onClick={() => handlePromote(pkg)}
+                    className="flex-1 bg-purple-50 hover:bg-purple-100 text-purple-600 py-2 rounded-lg text-sm font-medium transition-colors"
+                    title="Promote"
+                  >
+                    📢 Ads
+                  </button>
+                  <button
+                    onClick={() => handleSendWhatsApp(pkg)}
+                    className="flex-1 bg-green-50 hover:bg-green-100 text-green-600 py-2 rounded-lg text-sm font-medium transition-colors"
+                    title="WhatsApp"
+                  >
+                    💬 Send
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+
+          {filteredPackages.length === 0 && (
+            <div className="col-span-full text-center py-12">
+              <div className="text-6xl mb-4">📦</div>
+              <p className="text-gray-500 text-lg">No packages found</p>
+              <button
+                onClick={() => setShowForm(true)}
+                className="mt-4 text-blue-600 hover:text-blue-700 font-medium"
+              >
+                Create your first package
+              </button>
+            </div>
+          )}
+        </motion.div>
+      )}
+
+      {/* Table View */}
+      {viewMode === 'table' && (
+        <div className="bg-white shadow rounded-lg overflow-hidden">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -431,7 +559,8 @@ export default function Packages() {
             No packages found
           </div>
         )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

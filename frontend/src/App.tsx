@@ -9,6 +9,7 @@ import Deals from './pages/Deals';
 import Packages from './pages/Packages';
 import Bookings from './pages/Bookings';
 import Integrations from './pages/Integrations';
+import AdsDashboard from './pages/AdsDashboard';
 import { ToastProvider } from './components/ui/toast';
 
 function App() {
@@ -34,6 +35,7 @@ function App() {
               <Route path="packages" element={<Packages />} />
               <Route path="bookings" element={<Bookings />} />
               <Route path="integrations" element={<Integrations />} />
+              <Route path="ads-dashboard" element={<AdsDashboard />} />
             </Route>
           </Routes>
         </div>

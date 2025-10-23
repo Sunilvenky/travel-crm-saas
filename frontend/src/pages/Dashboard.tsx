@@ -14,12 +14,13 @@ export default function Dashboard() {
   };
 
   const navItems = [
-    { path: '/', label: 'Dashboard', icon: '🏠' },
+    { path: '/', label: 'Dashboard', icon: '📊' },
     { path: '/leads', label: 'Leads', icon: '👥' },
     { path: '/customers', label: 'Customers', icon: '🤝' },
     { path: '/deals', label: 'Deals', icon: '💼' },
-    { path: '/packages', label: 'Packages', icon: '🎒' },
+    { path: '/packages', label: 'Packages', icon: '�' },
     { path: '/bookings', label: 'Bookings', icon: '📅' },
+    { path: '/ads-dashboard', label: 'Ads Dashboard', icon: '📢' },
     { path: '/integrations', label: 'Integrations', icon: '🔌' },
   ];
 

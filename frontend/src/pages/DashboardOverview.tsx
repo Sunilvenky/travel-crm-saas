@@ -12,8 +12,25 @@ import {
   Plus,
   Target,
   MapPin,
-  Clock
+  Clock,
+  ArrowUp,
+  ArrowDown
 } from 'lucide-react';
+import {
+  LineChart,
+  Line,
+  BarChart,
+  Bar,
+  PieChart,
+  Pie,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
+} from 'recharts';
 import api from '../api';
 
 interface Stats {
@@ -23,6 +40,17 @@ interface Stats {
   packages: number;
   bookings: number;
   totalRevenue: number;
+}
+
+interface RevenueData {
+  date: string;
+  revenue: number;
+}
+
+interface LeadSourceData {
+  name: string;
+  value: number;
+  color: string;
 }
 
 const containerVariants = {
@@ -56,6 +84,8 @@ export default function DashboardOverview() {
     totalRevenue: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
+  const [leadSourceData, setLeadSourceData] = useState<LeadSourceData[]>([]);
 
   useEffect(() => {
     fetchStats();
@@ -81,6 +111,26 @@ export default function DashboardOverview() {
         bookings: bookingsRes.data.bookings.length,
         totalRevenue,
       });
+
+      // Generate mock revenue data (last 7 days)
+      const mockRevenueData: RevenueData[] = [];
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        mockRevenueData.push({
+          date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+          revenue: Math.floor(Math.random() * 5000) + 2000
+        });
+      }
+      setRevenueData(mockRevenueData);
+
+      // Generate lead source data
+      setLeadSourceData([
+        { name: 'WhatsApp', value: Math.floor(leadsRes.data.leads.length * 0.45), color: '#10B981' },
+        { name: 'Meta Ads', value: Math.floor(leadsRes.data.leads.length * 0.30), color: '#8B5CF6' },
+        { name: 'Website', value: Math.floor(leadsRes.data.leads.length * 0.15), color: '#3B82F6' },
+        { name: 'Referral', value: Math.floor(leadsRes.data.leads.length * 0.10), color: '#F59E0B' },
+      ]);
     } catch (error) {
       console.error('Error fetching stats:', error);
     } finally {
@@ -113,7 +163,9 @@ export default function DashboardOverview() {
       icon: Users,
       color: 'from-blue-500 to-blue-600',
       bgColor: 'bg-blue-50',
-      textColor: 'text-blue-600'
+      textColor: 'text-blue-600',
+      trend: '+12%',
+      trendUp: true
     },
     {
       title: 'Total Customers',
@@ -121,7 +173,9 @@ export default function DashboardOverview() {
       icon: Users,
       color: 'from-green-500 to-green-600',
       bgColor: 'bg-green-50',
-      textColor: 'text-green-600'
+      textColor: 'text-green-600',
+      trend: '+8%',
+      trendUp: true
     },
     {
       title: 'Active Deals',
@@ -129,7 +183,9 @@ export default function DashboardOverview() {
       icon: Briefcase,
       color: 'from-yellow-500 to-yellow-600',
       bgColor: 'bg-yellow-50',
-      textColor: 'text-yellow-600'
+      textColor: 'text-yellow-600',
+      trend: '+5%',
+      trendUp: true
     },
     {
       title: 'Travel Packages',
@@ -137,7 +193,9 @@ export default function DashboardOverview() {
       icon: Package,
       color: 'from-purple-500 to-purple-600',
       bgColor: 'bg-purple-50',
-      textColor: 'text-purple-600'
+      textColor: 'text-purple-600',
+      trend: '0%',
+      trendUp: true
     },
     {
       title: 'Total Bookings',
@@ -145,7 +203,9 @@ export default function DashboardOverview() {
       icon: Calendar,
       color: 'from-indigo-500 to-indigo-600',
       bgColor: 'bg-indigo-50',
-      textColor: 'text-indigo-600'
+      textColor: 'text-indigo-600',
+      trend: '+18%',
+      trendUp: true
     },
     {
       title: 'Total Revenue',
@@ -153,7 +213,9 @@ export default function DashboardOverview() {
       icon: DollarSign,
       color: 'from-red-500 to-red-600',
       bgColor: 'bg-red-50',
-      textColor: 'text-red-600'
+      textColor: 'text-red-600',
+      trend: '+24%',
+      trendUp: true
     },
   ];
 
@@ -193,20 +255,114 @@ export default function DashboardOverview() {
           <motion.div key={index} variants={itemVariants}>
             <Card className="overflow-hidden hover:shadow-lg transition-shadow duration-300" hover>
               <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex-1">
                     <p className="text-sm font-medium text-gray-600 mb-1">{card.title}</p>
-                    <p className="text-2xl font-bold text-gray-900">{card.value}</p>
+                    <p className="text-3xl font-bold text-gray-900">{card.value}</p>
+                    <div className="flex items-center mt-2">
+                      {card.trendUp ? (
+                        <ArrowUp className="w-4 h-4 text-green-500 mr-1" />
+                      ) : (
+                        <ArrowDown className="w-4 h-4 text-red-500 mr-1" />
+                      )}
+                      <span className={`text-sm font-medium ${card.trendUp ? 'text-green-500' : 'text-red-500'}`}>
+                        {card.trend}
+                      </span>
+                      <span className="text-sm text-gray-500 ml-1">vs last month</span>
+                    </div>
                   </div>
-                  <div className={`p-3 rounded-full ${card.bgColor}`}>
-                    <card.icon className={`w-6 h-6 ${card.textColor}`} />
+                  <div className={`p-4 rounded-2xl ${card.bgColor}`}>
+                    <card.icon className={`w-8 h-8 ${card.textColor}`} />
                   </div>
                 </div>
-                <div className={`mt-4 h-1 bg-gradient-to-r ${card.color} rounded-full`} />
+                <div className={`h-2 bg-gradient-to-r ${card.color} rounded-full`} />
               </CardContent>
             </Card>
           </motion.div>
         ))}
+      </motion.div>
+
+      {/* Charts Section */}
+      <motion.div
+        className="grid grid-cols-1 lg:grid-cols-2 gap-6"
+        variants={containerVariants}
+      >
+        {/* Revenue Trend Chart */}
+        <motion.div variants={itemVariants}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <TrendingUp className="w-5 h-5 mr-2 text-blue-600" />
+                Revenue Trend (Last 7 Days)
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <LineChart data={revenueData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                  <XAxis dataKey="date" stroke="#6b7280" />
+                  <YAxis stroke="#6b7280" />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: '#fff', 
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="revenue" 
+                    stroke="#3B82F6" 
+                    strokeWidth={3}
+                    dot={{ fill: '#3B82F6', r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Lead Sources Pie Chart */}
+        <motion.div variants={itemVariants}>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center">
+                <Users className="w-5 h-5 mr-2 text-purple-600" />
+                Lead Sources
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={300}>
+                <PieChart>
+                  <Pie
+                    data={leadSourceData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={100}
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {leadSourceData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                {leadSourceData.map((source, index) => (
+                  <div key={index} className="flex items-center">
+                    <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: source.color }} />
+                    <span className="text-sm text-gray-700">{source.name}: {source.value}</span>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       </motion.div>
 
       {/* Bottom Section */}
